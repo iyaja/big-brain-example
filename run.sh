@@ -1,3 +1,3 @@
 #!/bin/bash
 
-deepspeed cifar10_deepspeed.py --deepspeed --deepspeed_config ds_config.json $@
+deepspeed train.py --deepspeed --deepspeed_config config.json $@
