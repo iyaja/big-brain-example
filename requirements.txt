@@ -1,0 +1,4 @@
+deepspeed
+torchvision
+pillow
+matplotlib
