@@ -97,33 +97,39 @@ deepspeed.init_distributed()
 #     If running on Windows and you get a BrokenPipeError, try setting
 #     the num_worker of torch.utils.data.DataLoader() to 0.
 
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
+# transform = transforms.Compose([
+#     transforms.Resize(229),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+# ])
 
 if torch.distributed.get_rank() != 0:
     # might be downloading cifar data, let rank 0 download first
     torch.distributed.barrier()
 
-trainset = torchvision.datasets.CIFAR10(root='./data',
-                                        train=True,
-                                        download=True,
-                                        transform=transform)
+trainset = torchvision.datasets.FakeData(
+            size=40*128,
+            image_size=(3, 299, 299),
+            num_classes=1000,
+            transform=torchvision.transforms.ToTensor())
+
+# data_loader = torch.utils.data.DataLoader(dataset, batch_size=int(args.batch_size))
 
 if torch.distributed.get_rank() == 0:
     # cifar data is downloaded, indicate other ranks can proceed
     torch.distributed.barrier()
 
 trainloader = torch.utils.data.DataLoader(trainset,
-                                          batch_size=16,
+                                          batch_size=128,
                                           shuffle=True,
                                           num_workers=2)
 
-testset = torchvision.datasets.CIFAR10(root='./data',
-                                       train=False,
-                                       download=True,
-                                       transform=transform)
+testset = torchvision.datasets.FakeData(
+            size=40*128,
+            image_size=(3, 299, 299),
+            num_classes=1000,
+            transform=torchvision.transforms.ToTensor())
+
 testloader = torch.utils.data.DataLoader(testset,
                                          batch_size=4,
                                          shuffle=False,
@@ -207,7 +213,7 @@ class Net(nn.Module):
         return x
 
 
-net = Net()
+net = torchvision.models.inception_v3(pretrained=True)
 
 
 def create_moe_param_groups(model):
